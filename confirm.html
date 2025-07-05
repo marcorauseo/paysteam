@@ -1,0 +1,29 @@
+
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <title>PaySteam • Conferma pagamento</title>
+  <style>
+    body{font-family:Arial,Helvetica,sans-serif;text-align:center;margin-top:40px}
+    button{margin:10px 20px;padding:8px 20px}
+  </style>
+</head>
+<body>
+  <h2>Conferma pagamento</h2>
+  <p id="desc"></p>
+  <form method="post" action="/pay/confirm">
+    <input type="hidden" name="callback_url" id="cb">
+    <input type="hidden" name="id_transazione" id="tx">
+    <button type="submit" name="ok" value="1">Accetta</button>
+    <button type="submit" name="ok" value="0">Annulla</button>
+  </form>
+<script>
+const params = new URLSearchParams(location.search);
+document.getElementById('desc').textContent =
+  `${params.get('descrizione')} — €${params.get('prezzo')}`;
+document.getElementById('cb').value = params.get('callback_url');
+document.getElementById('tx').value = params.get('id_transazione');
+</script>
+</body>
+</html>

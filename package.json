@@ -3,11 +3,23 @@
   "version": "1.0.0",
   "description": "Minimal PaySteam payment gateway mock in Node.js",
   "main": "app.js",
-  "type": "module",
   "scripts": {
     "start": "node app.js"
   },
   "dependencies": {
-    "express": "^5.1.0"
-  }
+    "body-parser": "^2.2.0",
+    "express": "^5.1.0",
+    "node-fetch": "^2.7.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/marcorauseo/paysteam.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/marcorauseo/paysteam/issues"
+  },
+  "homepage": "https://github.com/marcorauseo/paysteam#readme"
 }

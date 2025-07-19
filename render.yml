@@ -16,3 +16,7 @@ services:
         value: https://paysteam.onrender.com
       - key: MERCHANT_ID
         value: TRAINAPP01
+      - key: TRAINAPP_URL
+        value: https://train-app.onrender.com
+
+

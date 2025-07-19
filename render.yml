@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: paysteam
+    env: node
+    buildCommand: npm install
+    startCommand: npm start
+    plan: free
+    envVars:
+      - key: SUPABASE_URL
+        value: postgresql://postgres.zdysoejrwfcjmqvwphbu:samsulek210489@aws-0-eu-central-1.pooler.supabase.com:6543/postgres
+      - key: NODE_TLS_REJECT_UNAUTHORIZED
+        value: "0"
+      - key: JWT_SECRET
+        value: SuperSegretoFirmato2025!
+      - key: PAYSTEAM_URL
+        value: https://paysteam.onrender.com/pay
+      - key: MERCHANT_ID
+        value: TRAINAPP01

@@ -8,9 +8,13 @@ const __dirname  = path.dirname(__filename);
 
 const app = express();
 const PORT = process.env.PORT || 4000;
+const cors = require('cors');
+
+
 
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
+app.use(cors());
 
 /* ------------ pagina di avvio pagamento --------------- */
 app.get('/pay', (req, res) => {

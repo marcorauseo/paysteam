@@ -47,7 +47,7 @@
   document.getElementById('desc').textContent = desc;
 
   async function caricaSaldo() {
-    try {
+     try {
       const res = await fetch('/api/saldo?email=' + encodeURIComponent(email));
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Errore saldo');
@@ -74,32 +74,38 @@
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Errore pagamento');
 
-      await fetch(callback, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': 'ferrovie-key'
-        },
-        body: JSON.stringify({ idTransazione: id, esito: 'OK' })
-      });
+      // 🔁 Redirect a conferma pagamento con parametri
+      const form = document.createElement('form');
+      form.method = 'POST';
+      form.action = '/pay/confirm';
 
-      location.href = '/thankyou.html';
+      const ok = document.createElement('input');
+      ok.name = 'ok';
+      ok.value = '1';
+
+      const cb = document.createElement('input');
+      cb.name = 'callback_url';
+      cb.value = callback;
+
+      const tx = document.createElement('input');
+      tx.name = 'id_transazione';
+      tx.value = id;
+
+      [ok, cb, tx].forEach(el => form.appendChild(el));
+      document.body.appendChild(form);
+      form.submit();
     } catch (err) {
       document.getElementById('errore').textContent = err.message;
     }
   }
 
-  function annulla() {
-    fetch(callback, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': 'ferrovie-key'
-      },
-      body: JSON.stringify({ idTransazione: id, esito: 'KO' })
-    }).finally(() => {
-      location.href = '/thankyou.html';
-    });
+
+function annulla() {
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = '/pay/cancel';
+    document.body.appendChild(form);
+    form.submit();
   }
 
   caricaSaldo();

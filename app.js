@@ -31,25 +31,24 @@ app.get('/pay', (req, res) => {
 });
 
 /* ------------ conferma / annulla ---------------------- */
-app.post('/pay/confirm', async (req, res) => {
-  const { callback_url, id_transazione, ok } = req.body;
-
-  try {
-    await fetch(callback_url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        urlInviante: process.env.PAYSTEAM_URL,
-        idTransazione: id_transazione,
-        esito: ok === '1' ? 'OK' : 'KO'
-      })
-    });
-    res.send(`<h2>Transazione ${ok === '1' ? 'Completata' : 'Annullata'}</h2>
-              <a href="/">Torna alla home</a>`);
-  } catch (err) {
-    console.error(err);
-    res.status(500).send('Errore chiamata callback merchant');
-  }
+app.post('/pay/confirm', (req, res) => {
+  const { ok } = req.body;
+  const stato = ok === '1' ? 'Completato' : 'Annullato';
+  const messaggio = `
+    <h2>Transazione ${stato}</h2>
+    <p>Pagamento avvenuto con successo.</p>
+    <p><a href="https://train-app.onrender.com/dashboard.html">Ritorna al sito dell'esercente</a></p>
+  `;
+  res.send(messaggio);
+});
+/* ------------ annulla pagamento ----------------------- */
+app.post('/pay/cancel', (req, res) => {
+  const messaggio = `
+    <h2>Transazione Annullata</h2>
+    <p>Il pagamento è stato annullato.</p>
+    <p><a href="https://train-app.onrender.com/dashboard.html">Ritorna al sito dell'esercente</a></p>
+  `;
+  res.send(messaggio);
 });
 
 app.listen(PORT, () => console.log('PaySteam in ascolto sulla porta', PORT));

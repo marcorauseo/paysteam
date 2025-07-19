@@ -8,8 +8,33 @@
     body{font-family:Arial,Helvetica,sans-serif;text-align:center;margin-top:40px}
     button{margin:10px 20px;padding:8px 20px}
   </style>
+
+  <script>
+    const token = localStorage.getItem('token');
+    if (!token) {
+      document.write(`
+        <h2>⚠️ Accesso richiesto</h2>
+        <p>Per confermare l'acquisto è necessario essere loggati.</p>
+        <button onclick="location.href='/index.html'">Login / Registrati</button>
+      `);
+      throw new Error("Utente non loggato");
+    }
+  </script>
 </head>
 <body>
+  <script>
+  const jwt = localStorage.getItem('token');
+  if (!jwt) {
+    document.body.innerHTML = `
+      <h2>⚠️ Autenticazione richiesta</h2>
+      <p>Per procedere con il pagamento, effettua prima il <strong>login</strong> o la <strong>registrazione</strong>.</p>
+      <button onclick="window.location.href='/index.html'">Vai al login</button>
+    `;
+    throw new Error('Accesso negato: token assente');
+  }
+</script>
+
+
   <h2>Conferma pagamento</h2>
   <p id="desc"></p>
   <form method="post" action="/pay/confirm">

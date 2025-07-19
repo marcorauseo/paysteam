@@ -39,7 +39,7 @@ app.post('/pay/confirm', async (req, res) => {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        urlInviante: `http://localhost:${PORT}`,
+        urlInviante: process.env.PAYSTEAM_URL,
         idTransazione: id_transazione,
         esito: ok === '1' ? 'OK' : 'KO'
       })

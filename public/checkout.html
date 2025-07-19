@@ -3,78 +3,95 @@
 <html lang="it">
 <head>
   <meta charset="UTF-8">
-  <title>Conferma Pagamento - PaySteam</title>
+  <title>Conferma Pagamento</title>
   <style>
-    body { font-family: Arial; padding: 20px; }
-    h2 { color: #0077b6; }
-    .box { border: 1px solid #ccc; padding: 20px; width: 400px; margin-top: 30px; }
-    button { padding: 10px 20px; margin-right: 10px; }
+    body { font-family: Arial; padding: 20px; background: #f9f9f9; }
+    h1 { color: #0077b6; }
+    .info { margin-bottom: 20px; }
+    button { padding: 10px 16px; margin-right: 10px; }
   </style>
 </head>
 <body>
-  <h2>Conferma pagamento</h2>
-  <div class="box">
-    <p><strong>Utente:</strong> <span id="user"></span></p>
+  <h1>Checkout PaySteam</h1>
+  <div class="info">
+    <p><strong>Utente:</strong> <span id="email"></span></p>
+    <p><strong>Prezzo:</strong> €<span id="prezzo"></span></p>
     <p><strong>Descrizione:</strong> <span id="desc"></span></p>
-    <p><strong>Prezzo:</strong> <span id="price"></span> €</p>
-    <p><strong>Saldo attuale:</strong> <span id="saldo"></span> €</p>
-    <button onclick="notifica('OK')">Accetta</button>
-    <button onclick="notifica('KO')">Rifiuta</button>
+    <p><strong>Saldo attuale:</strong> €<span id="saldo"></span></p>
+    <p id="errore" style="color:red;"></p>
   </div>
+  <button onclick="paga()">✅ Conferma</button>
+  <button onclick="annulla()">❌ Annulla</button>
 
-  <script>
-    const params = new URLSearchParams(location.search);
-    const idTransazione = params.get('id');
-    const urlRisposta = params.get('callback');
-    const descrizione = params.get('desc');
-    const prezzo = parseFloat(params.get('prezzo'));
+<script>
+  const params = new URLSearchParams(location.search);
+  const id = params.get('id');
+  const callback = params.get('callback');
+  const prezzo = parseFloat(params.get('prezzo'));
+  const desc = params.get('desc');
+  const email = params.get('email') || localStorage.getItem('paysteam_email');
 
-    const user = localStorage.getItem('paysteam_email');
-    if (!user) {
-      const redirectBack = '/checkout.html?' + params.toString();
-      window.location.href = '/login.html?redirect=' + encodeURIComponent(redirectBack);
-    }
+  document.getElementById('email').textContent = email;
+  document.getElementById('prezzo').textContent = prezzo.toFixed(2);
+  document.getElementById('desc').textContent = desc;
 
-    document.getElementById('user').textContent = user;
-    document.getElementById('desc').textContent = descrizione;
-    document.getElementById('price').textContent = prezzo.toFixed(2);
-
-    async function getSaldo() {
-      const res = await fetch('/api/saldo?email=' + user);
+  async function caricaSaldo() {
+    try {
+      const res = await fetch('/api/saldo?email=' + encodeURIComponent(email));
       const data = await res.json();
-      document.getElementById('saldo').textContent = data.saldo?.toFixed(2) || '0.00';
-    }
-
-    async function notifica(esito) {
-      if (esito === 'OK') {
-        const saldo = parseFloat(document.getElementById('saldo').textContent);
-        if (saldo < prezzo) {
-          alert('❌ Saldo insufficiente');
-          return;
-        }
-
-        // scala saldo
-        await fetch('/api/scalasaldo', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email: user, importo: prezzo })
-        });
+      if (!res.ok) throw new Error(data.error || 'Errore saldo');
+      const saldoNum = parseFloat(data.saldo);
+      if (isNaN(saldoNum)) throw new Error('Saldo non valido');
+      if (saldoNum < 0) throw new Error('Saldo negativo non consentito');
+      document.getElementById('saldo').textContent = saldoNum.toFixed(2);
+      if (data.saldo < prezzo) {
+        document.getElementById('errore').textContent = 'Saldo insufficiente per procedere.';
+        document.querySelector('button[onclick="paga()"]').disabled = true;
       }
+    } catch (err) {
+      document.getElementById('errore').textContent = err.message;
+    }
+  }
 
-      await fetch(urlRisposta, {
+  async function paga() {
+    try {
+      const res = await fetch('/api/scalasaldo', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, importo: prezzo })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Errore pagamento');
+
+      await fetch(callback, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'x-api-key': 'ferrovie-key'
         },
-        body: JSON.stringify({ idTransazione, esito })
+        body: JSON.stringify({ idTransazione: id, esito: 'OK' })
       });
 
-      alert('Pagamento ' + (esito === 'OK' ? 'confermato!' : 'annullato'));
-      window.location.href = '/thankyou.html';
+      location.href = '/thankyou.html';
+    } catch (err) {
+      document.getElementById('errore').textContent = err.message;
     }
+  }
 
-    getSaldo();
-  </script>
+  function annulla() {
+    fetch(callback, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': 'ferrovie-key'
+      },
+      body: JSON.stringify({ idTransazione: id, esito: 'KO' })
+    }).finally(() => {
+      location.href = '/thankyou.html';
+    });
+  }
+
+  caricaSaldo();
+</script>
 </body>
 </html>

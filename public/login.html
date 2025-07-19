@@ -42,6 +42,7 @@
       if (!res.ok) throw new Error(data.error);
 
       localStorage.setItem('paysteam_email', payload.email);
+      localStorage.setItem('token', 'demo-token'); // Simulated token for demo purposes
       location.href = redirect;
     } catch (err) {
       document.getElementById('err').textContent = err.message;

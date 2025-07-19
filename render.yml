@@ -13,6 +13,6 @@ services:
       - key: JWT_SECRET
         value: SuperSegretoFirmato2025!
       - key: PAYSTEAM_URL
-        value: https://paysteam.onrender.com/pay
+        value: https://paysteam.onrender.com
       - key: MERCHANT_ID
         value: TRAINAPP01

@@ -1,0 +1,36 @@
+
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <title>Login PaySteam</title>
+  <style>
+    body { font-family: Arial; padding: 20px; }
+    form { width: 300px; margin: 50px auto; }
+    input { display: block; margin: 10px 0; padding: 8px; width: 100%; }
+    button { padding: 10px; width: 100%; }
+  </style>
+</head>
+<body>
+  <h2>Login PaySteam</h2>
+  <form onsubmit="event.preventDefault(); login()">
+    <input type="email" id="email" placeholder="Email registrata" required />
+    <button type="submit">Accedi</button>
+  </form>
+
+  <script>
+    function login() {
+      const email = document.getElementById('email').value;
+      localStorage.setItem('paysteam_email', email);
+
+      // Redirect back to checkout if query present
+      const back = new URLSearchParams(window.location.search).get('redirect');
+      if (back) {
+        window.location.href = back;
+      } else {
+        alert('Login effettuato. Nessuna destinazione.');
+      }
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,80 @@
+
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <title>Conferma Pagamento - PaySteam</title>
+  <style>
+    body { font-family: Arial; padding: 20px; }
+    h2 { color: #0077b6; }
+    .box { border: 1px solid #ccc; padding: 20px; width: 400px; margin-top: 30px; }
+    button { padding: 10px 20px; margin-right: 10px; }
+  </style>
+</head>
+<body>
+  <h2>Conferma pagamento</h2>
+  <div class="box">
+    <p><strong>Utente:</strong> <span id="user"></span></p>
+    <p><strong>Descrizione:</strong> <span id="desc"></span></p>
+    <p><strong>Prezzo:</strong> <span id="price"></span> €</p>
+    <p><strong>Saldo attuale:</strong> <span id="saldo"></span> €</p>
+    <button onclick="notifica('OK')">Accetta</button>
+    <button onclick="notifica('KO')">Rifiuta</button>
+  </div>
+
+  <script>
+    const params = new URLSearchParams(location.search);
+    const idTransazione = params.get('id');
+    const urlRisposta = params.get('callback');
+    const descrizione = params.get('desc');
+    const prezzo = parseFloat(params.get('prezzo'));
+
+    const user = localStorage.getItem('paysteam_email');
+    if (!user) {
+      const redirectBack = '/checkout.html?' + params.toString();
+      window.location.href = '/login.html?redirect=' + encodeURIComponent(redirectBack);
+    }
+
+    document.getElementById('user').textContent = user;
+    document.getElementById('desc').textContent = descrizione;
+    document.getElementById('price').textContent = prezzo.toFixed(2);
+
+    async function getSaldo() {
+      const res = await fetch('/api/saldo?email=' + user);
+      const data = await res.json();
+      document.getElementById('saldo').textContent = data.saldo?.toFixed(2) || '0.00';
+    }
+
+    async function notifica(esito) {
+      if (esito === 'OK') {
+        const saldo = parseFloat(document.getElementById('saldo').textContent);
+        if (saldo < prezzo) {
+          alert('❌ Saldo insufficiente');
+          return;
+        }
+
+        // scala saldo
+        await fetch('/api/scalasaldo', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: user, importo: prezzo })
+        });
+      }
+
+      await fetch(urlRisposta, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': 'ferrovie-key'
+        },
+        body: JSON.stringify({ idTransazione, esito })
+      });
+
+      alert('Pagamento ' + (esito === 'OK' ? 'confermato!' : 'annullato'));
+      window.location.href = '/thankyou.html';
+    }
+
+    getSaldo();
+  </script>
+</body>
+</html>

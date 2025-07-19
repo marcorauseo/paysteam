@@ -4,10 +4,13 @@ const bodyParser = require('body-parser');
 const path = require('path');
 const fetch = require('node-fetch');
 const { Pool } = require('pg');
+const authRoutes = require('./backend/routes/auth');
+
 
 const app = express();
 app.use(bodyParser.json());
 app.use(express.static(path.join(__dirname, 'public')));
+app.use('/api/auth', authRoutes);
 
 const pool = new Pool({
   connectionString: process.env.SUPABASE_URL || process.env.DATABASE_URL,
@@ -39,7 +42,8 @@ app.get('/api/saldo', async (req, res) => {
   }
 });
 
-// API per scalare saldo
+
+// API per scalare saldo + salvare movimento
 app.post('/api/scalasaldo', async (req, res) => {
   const { email, importo } = req.body;
   if (!email || !importo)
@@ -49,8 +53,9 @@ app.post('/api/scalasaldo', async (req, res) => {
   try {
     await client.query('BEGIN');
 
+    // Recupera conto e utente
     const r1 = await client.query(
-      `SELECT CC.ID_CONTO, SALDO
+      `SELECT CC.ID_CONTO, CC.ID_UTENTE_PAY, SALDO
        FROM CONTO_CORRENTE CC
        JOIN UTENTE_PAY U ON U.ID_UTENTE_PAY = CC.ID_UTENTE_PAY
        WHERE U.EMAIL = $1 FOR UPDATE`,
@@ -62,19 +67,27 @@ app.post('/api/scalasaldo', async (req, res) => {
       return res.status(404).json({ error: 'Utente non trovato' });
     }
 
-    const saldo = parseFloat(r1.rows[0].saldo);
-    if (saldo < importo) {
+    const { saldo, id_conto, id_utente_pay } = r1.rows[0];
+    if (parseFloat(saldo) < parseFloat(importo)) {
       await client.query('ROLLBACK');
       return res.status(400).json({ error: 'Saldo insufficiente' });
     }
 
+    // Aggiorna saldo
     await client.query(
       'UPDATE CONTO_CORRENTE SET SALDO = SALDO - $1 WHERE ID_CONTO = $2',
-      [importo, r1.rows[0].id_conto]
+      [importo, id_conto]
+    );
+
+    // Salva movimento
+    await client.query(
+      `INSERT INTO MOVIMENTO (ID_UTENTE_PAY, TIPO, IMPORTO, DESCRIZIONE)
+       VALUES ($1, 'USCITA', $2, $3)`,
+      [id_utente_pay, importo, 'Pagamento acquisto']
     );
 
     await client.query('COMMIT');
-    res.json({ message: 'Saldo aggiornato' });
+    res.json({ message: 'Saldo aggiornato e movimento registrato' });
 
   } catch (err) {
     await client.query('ROLLBACK');
@@ -84,6 +97,7 @@ app.post('/api/scalasaldo', async (req, res) => {
     client.release();
   }
 });
+
 
 // API per ricevere richiesta pagamento (da app treni)
 app.post('/api/pay', async (req, res) => {
@@ -113,3 +127,25 @@ app.post('/api/pay', async (req, res) => {
 app.listen(4000, () => {
   console.log('✅ PaySteam attivo su http://localhost:4000');
 });
+
+app.get('/api/movimenti', async (req, res) => {
+  const email = req.query.email;
+  if (!email) return res.status(400).json({ error: 'Email mancante' });
+
+  try {
+    const r = await pool.query(`
+      SELECT TIPO, IMPORTO, TO_CHAR(DATA, 'YYYY-MM-DD HH24:MI') as data, DESCRIZIONE
+      FROM MOVIMENTO
+      WHERE ID_UTENTE_PAY = (
+        SELECT ID_UTENTE_PAY FROM UTENTE_PAY WHERE EMAIL = $1
+      )
+      ORDER BY DATA DESC
+    `, [email]);
+
+    res.json(r.rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Errore recupero movimenti' });
+  }
+});
+

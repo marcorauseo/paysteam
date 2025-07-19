@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <title>PaySteam - Home</title>
+  <style>
+    body { font-family: Arial; text-align: center; padding: 50px; background: #f0f8ff; }
+    h1 { color: #0077b6; }
+    a.button {
+      display: inline-block;
+      margin: 10px;
+      padding: 12px 20px;
+      background-color: #0077b6;
+      color: white;
+      text-decoration: none;
+      border-radius: 5px;
+    }
+    a.button:hover {
+      background-color: #005f8e;
+    }
+  </style>
+</head>
+<body>
+  <h1>Benvenuto su PaySteam</h1>
+  <p>Gestisci il tuo conto, paga e controlla i movimenti con semplicità.</p>
+  <a href="/login.html" class="button">Login</a>
+  <a href="/register.html" class="button">Registrati</a>
+  <a id="accountLink" href="/account.html" class="button" style="display:none">Vai al tuo conto</a>
+
+  <script>
+    if (localStorage.getItem('paysteam_email')) {
+      document.getElementById('accountLink').style.display = 'inline-block';
+    }
+  </script>
+</body>
+</html>

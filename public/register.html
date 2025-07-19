@@ -2,38 +2,46 @@
 <html lang="it">
 <head>
   <meta charset="UTF-8">
-  <title>Login - PaySteam</title>
+  <title>Registrazione - PaySteam</title>
   <style>
     body { font-family: Arial; padding: 20px; }
-    label, input { display: block; margin: 10px 0; }
-    input { padding: 6px; width: 250px; }
+    label, input, select { display: block; margin: 10px 0; }
+    input, select { padding: 6px; width: 250px; }
     button { padding: 10px 20px; margin-top: 10px; }
     .error { color: red; margin-top: 10px; }
   </style>
 </head>
 <body>
-  <h1>Login PaySteam</h1>
-  <form id="loginForm">
+  <h1>Registrazione utente PaySteam</h1>
+  <form id="regForm">
+    <label>Nome: <input type="text" name="nome" required /></label>
+    <label>Cognome: <input type="text" name="cognome" required /></label>
     <label>Email: <input type="email" name="email" required /></label>
     <label>Password: <input type="password" name="password" required /></label>
-    <button type="submit">Login</button>
+    <label>Tipo utente:
+      <select name="tipo">
+        <option value="REG">REG</option>
+        <option value="ESERCENTE">ESERCENTE</option>
+      </select>
+    </label>
+    <button type="submit">Registrati</button>
     <div class="error" id="err"></div>
   </form>
 
 <script>
-  const params = new URLSearchParams(location.search);
-  const redirect = params.get('next') || '/account.html';
-
-  document.getElementById('loginForm').onsubmit = async function (e) {
+  document.getElementById('regForm').onsubmit = async function (e) {
     e.preventDefault();
     const form = e.target;
     const payload = {
+      nome: form.nome.value,
+      cognome: form.cognome.value,
       email: form.email.value,
-      password: form.password.value
+      password: form.password.value,
+      tipo: form.tipo.value
     };
 
     try {
-      const res = await fetch('/api/auth/login', {
+      const res = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
@@ -41,8 +49,8 @@
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
 
-      localStorage.setItem('paysteam_email', payload.email);
-      location.href = redirect;
+      alert('Registrazione completata!');
+      location.href = '/login.html';
     } catch (err) {
       document.getElementById('err').textContent = err.message;
     }

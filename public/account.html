@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <title>Il mio Conto - PaySteam</title>
+  <style>
+    body { font-family: Arial; padding: 20px; }
+    h1 { color: #0077b6; }
+    table { border-collapse: collapse; width: 100%; margin-top: 20px; }
+    th, td { border: 1px solid #ccc; padding: 8px; text-align: center; }
+    th { background: #f0f0f0; }
+    #logout { float: right; }
+  </style>
+</head>
+<body>
+  <button id="logout">Logout</button>
+  <h1>Il mio conto</h1>
+  <p><strong>Email:</strong> <span id="email"></span></p>
+  <p><strong>Saldo disponibile:</strong> €<span id="saldo"></span></p>
+
+  <h2>Movimenti</h2>
+  <table>
+    <thead>
+      <tr><th>Tipo</th><th>Importo</th><th>Data</th><th>Descrizione</th></tr>
+    </thead>
+    <tbody id="movimenti"></tbody>
+  </table>
+
+<script>
+  const email = localStorage.getItem('paysteam_email');
+  if (!email) location.href = '/login.html';
+  document.getElementById('email').textContent = email;
+
+  document.getElementById('logout').onclick = () => {
+    localStorage.clear();
+    location.href = '/login.html';
+  };
+
+  async function caricaConto() {
+    try {
+      const saldoRes = await fetch('/api/saldo?email=' + encodeURIComponent(email));
+      const saldoData = await saldoRes.json();
+      document.getElementById('saldo').textContent = parseFloat(saldoData.saldo).toFixed(2);
+
+      const movRes = await fetch('/api/movimenti?email=' + encodeURIComponent(email));
+      const movData = await movRes.json();
+
+      if (!movRes.ok || !Array.isArray(movData)) {
+  throw new Error(movData.error || 'Movimenti non disponibili');
+}
+
+      const tbody = document.getElementById('movimenti');
+      tbody.innerHTML = '';
+      
+      movData.forEach(m => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${m.tipo}</td>
+          <td>€${parseFloat(m.importo).toFixed(2)}</td>
+          <td>${m.data}</td>
+          <td>${m.descrizione || ''}</td>`;
+        tbody.appendChild(tr);
+      });
+    } catch (err) {
+      alert('Errore caricamento conto: ' + err.message);
+    }
+  }
+
+  caricaConto();
+</script>
+</body>
+</html>
